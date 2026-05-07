@@ -19,7 +19,7 @@ class SearchGroupChunksRequest(BaseModel):
     Schema for the input to the search_group_chunks tool.
     """
     group_id: str = Field(..., description="The ID of the GitHub group to search chunks for.")
-    embedding: list[float] = Field(..., description="The embedding vector to compare against the group chunks.")
+    doc_id: str = Field(..., description="The ID of the document for which we are searching relevant chunks.")
     limit: int = Field(3, description="The maximum number of chunks to return.")
     
 
