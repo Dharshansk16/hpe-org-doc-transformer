@@ -1,42 +1,43 @@
 const { buildNormalizedEvent } = require("../schema");
 
-module.exports = function normalizeMiro({ payload, fullData }) {
-  const eventType = fullData.type || payload.type || "board_event";
-  const boardUrl = payload.boardId?.viewLink || "";
+module.exports = function normalizeConfluence({ payload, fullData }) {
+  const eventType = payload.eventType || "page_event";
 
   return buildNormalizedEvent({
-    id: String(fullData.boardId),
-    source: "miro",
+    id: String(fullData.pageId),
+    source: "confluence",
     type: eventType,
+
     resource: {
-      id: String(fullData.boardId),
-      name: payload.boardId?.name || `Board ${fullData.boardId}`,
-      url: boardUrl,
-      status: "N/A",
+      id: String(fullData.pageId),
+      name: fullData.title || String(fullData.pageId),
+      url: fullData.url || "",
+      status: "active",
     },
+
     actor: {
-      id: payload.createdBy?.id || null,
-      name: payload.createdBy?.name || null,
-      email: payload.createdBy?.email || null,
+      id: fullData.updatedBy?.accountId || null,
+      name: fullData.updatedBy?.displayName || null,
+      email: null,
     },
+
     changes: {
       files: [],
       commits: [],
       fieldChanges: [],
-      pageChanges: null,
-      boardChanges: payload.item
-        ? [
-            {
-              itemId: payload.item?.id || null,
-              itemType: payload.item?.type || null,
-              action: eventType.split(":")[1] || "updated",
-            },
-          ]
-        : [],
+      pageChanges: {
+        versionBefore: fullData.change?.versionBefore,
+        versionAfter: fullData.change?.versionAfter,
+        spaceKey: fullData.space || null,
+        diffUrl: fullData.url ? `${fullData.url}?diff` : null,
+      },
+      boardChanges: [],
     },
+
     meta: {
-      teamId: payload.teamId || null,
-      boardType: payload.boardId?.type || null,
+      spaceKey: fullData.space || null,
+      parentPageId: null,
+      lastModified: payload.timestamp || null,
     },
   });
 };
