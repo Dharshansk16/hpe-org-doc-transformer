@@ -1,4 +1,7 @@
 {
+  "scripts": {
+    "rabbitmq:start": "docker compose up -d rabbitmq"
+  },
   "dependencies": {
     "amqplib": "^1.0.3",
     "axios": "^1.15.2",
