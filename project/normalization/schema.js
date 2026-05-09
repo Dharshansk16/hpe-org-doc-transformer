@@ -1,34 +1,32 @@
-function buildNormalizedEvent({ id, source, type, resource, actor, changes, meta }) {
-  if (!id || !source || !type || !resource?.name) {
+function buildNormalizedEvent({
+  doc_id,
+  source,
+  title,
+  content,
+  metadata = {},
+}) {
+
+  if (!doc_id || !source || !content) {
     throw new Error(
-      `Normalization error: missing required fields — id=${id}, source=${source}, type=${type}`
+      `Normalization error: missing required fields`
     );
   }
 
   return {
-    id,
+    doc_id,
+
     source,
-    type,
-    resource: {
-      id: resource.id || id,
-      name: resource.name,
-      url: resource.url || "",
-      status: resource.status || "N/A",
+
+    title: title || "Untitled",
+
+    content,
+
+    metadata: {
+      ...metadata,
+
+      receivedAt: new Date().toISOString(),
     },
-    actor: {
-      id: actor?.id || null,
-      name: actor?.name || null,
-      email: actor?.email || null,
-    },
-    changes: {
-      files: changes?.files || [],
-      commits: changes?.commits || [],
-      fieldChanges: changes?.fieldChanges || [],
-      pageChanges: changes?.pageChanges || null,
-      boardChanges: changes?.boardChanges || [],
-    },
-    meta: meta || {},
-    receivedAt: new Date().toISOString(),
   };
 }
+
 module.exports = { buildNormalizedEvent };
