@@ -1,42 +1,33 @@
 const { buildNormalizedEvent } = require("../schema");
 
-module.exports = function normalizeMiro({ payload, fullData }) {
-  const eventType = fullData.type || payload.type || "board_event";
-  const boardUrl = payload.boardId?.viewLink || "";
+module.exports = function normalizeConfluence({ payload, fullData }) {
 
   return buildNormalizedEvent({
-    id: String(fullData.boardId),
-    source: "miro",
-    type: eventType,
-    resource: {
-      id: String(fullData.boardId),
-      name: payload.boardId?.name || `Board ${fullData.boardId}`,
-      url: boardUrl,
-      status: "N/A",
-    },
-    actor: {
-      id: payload.createdBy?.id || null,
-      name: payload.createdBy?.name || null,
-      email: payload.createdBy?.email || null,
-    },
-    changes: {
-      files: [],
-      commits: [],
-      fieldChanges: [],
-      pageChanges: null,
-      boardChanges: payload.item
-        ? [
-            {
-              itemId: payload.item?.id || null,
-              itemType: payload.item?.type || null,
-              action: eventType.split(":")[1] || "updated",
-            },
-          ]
-        : [],
-    },
-    meta: {
-      teamId: payload.teamId || null,
-      boardType: payload.boardId?.type || null,
+    doc_id: String(fullData.pageId),
+
+    source: "confluence",
+
+    title: fullData.title,
+
+    content: fullData.content,
+
+    metadata: {
+      version: fullData.version,
+      eventType: fullData.eventType,
+      space: fullData.space,
+      url: fullData.url,
+
+      updatedBy: {
+        accountId: fullData.updatedBy?.accountId || null,
+        displayName: fullData.updatedBy?.displayName || null,
+      },
+
+      change: {
+        versionBefore: fullData.change?.versionBefore || null,
+        versionAfter: fullData.change?.versionAfter || null,
+      },
+
+      timestamp: payload.timestamp || null,
     },
   });
 };

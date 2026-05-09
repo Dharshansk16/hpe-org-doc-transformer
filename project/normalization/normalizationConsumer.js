@@ -43,7 +43,7 @@ async function startNormalizationConsumer() {
       );
 
       console.log(
-        `[Normalizer] ✓ ${normalized.source} | title="${normalized.title}" | doc_id=${normalized.id}`
+        `[Normalizer] ✓ ${normalized.source} | title="${normalized.title}" | doc_id=${normalized.doc_id}`
       );
 
       channel.ack(msg);
