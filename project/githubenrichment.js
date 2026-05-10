@@ -46,11 +46,10 @@ app.post("/enrich/github", async (req, res) => {
       console.log("README not found:", err.response?.status);
     }
 
-    
-    console.log("=================================");
-    console.log("README LENGTH:", readmeText.length);
-    console.log("README PREVIEW:", readmeText.slice(0, 100));
-    console.log("=================================");
+    // console.log("=================================");
+    // console.log("README LENGTH:", readmeText.length);
+    // console.log("README PREVIEW:", readmeText.slice(0, 100));
+    // console.log("=================================");
 
     res.json({
       repoDetails: repoRes.data,
