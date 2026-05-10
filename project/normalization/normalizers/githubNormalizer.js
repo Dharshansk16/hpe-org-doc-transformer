@@ -1,59 +1,71 @@
 const { buildNormalizedEvent } = require("../schema");
 
 module.exports = function normalizeGithub({ payload, fullData }) {
-  const eventType =
-    payload.action ||
-    (payload.commits ? "push" : null) ||
-    (payload.ref ? "ref_update" : null) ||
-    "repository_event";
 
   
-  const files = (fullData.commits || []).flatMap(c =>
-    (c.files || []).map(f => ({
-      filename: f.filename,
-      status: f.status,
-      additions: f.additions ?? null,
-      deletions: f.deletions ?? null,
-      changes: f.changes ?? null,
-      patch : f.patch ? f.patch.slice(0 , 1000) : null,
-    }))
-  );
+  const commitMessages = (fullData.commits || [])
+    .map(commit => commit.message)
+    .join("\n");
 
   
-  const commits = (fullData.commits || []).map(c => ({
-    sha: c.commitId,
-    message: c.message,
-    author: c.author || null,
-    timestamp: c.timestamp || null,
-  }));
+  const changedFiles = (fullData.commits || [])
+    .flatMap(commit => commit.files || [])
+    .map(file => file.filename)
+    .join("\n");
+
+  
+  const contentParts = [
+    fullData.description,
+    fullData.readmeSummary,
+    ...(fullData.features || []),
+    commitMessages,
+    changedFiles,
+  ];
+
+  const content = contentParts
+    .filter(Boolean)
+    .join("\n");
 
   return buildNormalizedEvent({
-    id: String(payload.repository?.id || fullData.repo),
+
+    doc_id:
+      String(payload.repository?.id || fullData.repo),
+
     source: "github",
-    type: eventType,
-    resource: {
-      id: String(payload.repository?.id || fullData.repo),
-      name: fullData.repo,
-      url: `https://github.com/${fullData.repo}`,
-      status: "active",
-    },
-    actor: {
-      id: String(payload.sender?.id || payload.pusher?.name || null),
-      name: payload.pusher?.name || payload.sender?.login || null,
-      email: payload.pusher?.email || null,
-    },
-    changes: {
-      files,
-      commits,
-      fieldChanges: [],
-      pageChanges: null,
-      boardChanges: [],
-    },
-    meta: {
-      branch: payload.ref?.replace("refs/heads/", "") || null,
-      description: fullData.description || null,
-      readmeSummary: fullData.readmeSummary || null,
-      features: fullData.features || [],
+
+    title:
+      fullData.name ||
+      fullData.repo ||
+      "GitHub Repository",
+
+    content,
+
+    metadata: {
+      repo: fullData.repo,
+
+      branch:
+        payload.ref?.replace("refs/heads/", "") || null,
+
+      features:
+        fullData.features || [],
+
+      commits:
+        (fullData.commits || []).map(commit => ({
+          id: commit.commitId,
+          message: commit.message,
+          author: commit.author,
+          timestamp: commit.timestamp,
+        })),
+
+      files:
+        (fullData.commits || [])
+          .flatMap(commit => commit.files || [])
+          .map(file => ({
+            filename: file.filename,
+            status: file.status,
+            additions: file.additions,
+            deletions: file.deletions,
+          })),
     },
   });
 };
