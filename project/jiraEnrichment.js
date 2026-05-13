@@ -9,8 +9,8 @@ const Jira_Base_URL = process.env.JIRA_BASE_URL;
 const Jira_Email = process.env.JIRA_EMAIL;
 const Jira_API_Token = process.env.JIRA_API_TOKEN;
 
-console.log("GITHUB TOKEN:", process.env.GITHUB_TOKEN);
-console.log("JIRA TOKEN:", process.env.JIRA_API_TOKEN);
+// console.log("GITHUB TOKEN:", process.env.GITHUB_TOKEN);
+// console.log("JIRA TOKEN:", process.env.JIRA_API_TOKEN);
 
 
 app.post("/enrich/jira" , async(req , res) =>{
