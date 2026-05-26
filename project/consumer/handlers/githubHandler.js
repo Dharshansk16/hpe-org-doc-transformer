@@ -52,16 +52,17 @@ module.exports = async function (data, channel) {
       try {
         console.log("Fetching commit:", commit.id);
 
-        const commitRes = await axios.get(
-          `https://api.github.com/repos/${repo}/commits/${commit.id}`,
-          {
-            headers: process.env.GITHUB_TOKEN
-              ? {
-                  Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-                }
-              : {},
-          }
-        );
+       const commitRes = await axios.get(
+  `https://api.github.com/repos/${repo}/commits/${commit.id}`,
+  {
+    headers: {
+      ...(process.env.GITHUB_TOKEN
+        ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
+        : {}),
+      Accept: "application/vnd.github.v3+json",
+    },
+  }
+);
 
         const files = (commitRes.data.files || [])
         .filter((file) => {
@@ -84,11 +85,7 @@ module.exports = async function (data, channel) {
             deletions : file.deletions,
             changes : file.changes,
 
-             patch : filename.includes("readme") 
-             ? null
-             : file.patch
-                ? file.patch.slice(0, 1000)
-                : null,
+             patch: file.patch ? file.patch.slice(0, 1000) : null,
            };
         });
 
