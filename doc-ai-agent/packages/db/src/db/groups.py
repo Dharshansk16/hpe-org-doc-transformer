@@ -107,3 +107,17 @@ def update_centroid(
         params,
     )
 
+def insert_new_group(
+        group_id: str,
+        group_name: str,
+        group_summary: str,
+) -> None:
+    _run_write(
+        """
+        INSERT INTO groups (id, group_name, group_summary, doc_count, proto_count)
+        VALUES (%s, %s, %s, 0, 0)
+        ON CONFLICT (id) DO NOTHING
+        """,
+        [group_id, group_name, group_summary]
+    )
+    
