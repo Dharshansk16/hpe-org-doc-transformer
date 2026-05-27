@@ -1,12 +1,15 @@
 const axios = require("axios");
+
 require("dotenv").config({
   path: require("path").resolve(__dirname, "../../.env"),
 });
 
-const { hasChanged } = require("../hashStore");
+const { hashChanged, hashReadmeChanged, getReadmeContent , updateReadmeContent} = require("../hashStore");
 const { extractReadmeData } = require("../utils/readmeParser");
+const { extractAddedContent } = require("../utils/diffExtractor");
 
 module.exports = async function (data, channel) {
+
   const { payload } = data;
 
   const repo = payload.repository?.full_name;
@@ -19,11 +22,123 @@ module.exports = async function (data, channel) {
   }
 
   try {
-    console.log("Calling API for full details");
+
+    const commits = payload.commits || [];
+
+    let commitDetails = [];
+
+    let changedReadmeFiles = [];
+
+    for (const commit of commits) {
+
+      try {
+
+        console.log(
+          "Fetching commit:",
+          commit.id
+        );
+
+       const commitRes = await axios.get(
+  `https://api.github.com/repos/${repo}/commits/${commit.id}`,
+  {
+    headers: {
+      ...(process.env.GITHUB_TOKEN
+        ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
+        : {}),
+      Accept: "application/vnd.github.v3+json",
+    },
+  }
+);
+
+        const files = await Promise.all(
+  (commitRes.data.files || [])
+    .filter((file) => {
+      const filename = file.filename.toLowerCase();
+      return filename.includes("readme") ||
+             filename.endsWith(".md") ||
+             filename.includes("docs");
+    })
+    .map(async (file) => {
+      const contentRes = await axios.get(
+        `https://api.github.com/repos/${repo}/contents/${file.filename}`,
+        {
+          headers: {
+            ...(process.env.GITHUB_TOKEN
+              ? { Authorization: `Bearer ${process.env.GITHUB_TOKEN}` }
+              : {}),
+            Accept: "application/vnd.github.v3+json",
+          },
+        }
+      );
+
+      const fullContent = Buffer.from(
+        contentRes.data.content, "base64"
+      ).toString("utf-8");
+
+      return {
+        filename: file.filename,
+        status: file.status,
+        additions: file.additions,
+        deletions: file.deletions,
+        changes: file.changes,
+        patch: fullContent,
+      };
+    })
+);
+
+        if (files.length === 0) {
+
+          console.log(
+            "No markdown/doc related changes found for commit:",
+            commit.id
+          );
+
+          continue;
+        }
+
+        commitDetails.push({
+
+          commitId: commit.id,
+
+          message: commit.message,
+
+          author: commit.author?.name || null,
+
+          timestamp: commit.timestamp || null,
+
+          files,
+        });
+
+      } catch (err) {
+
+        console.log(
+          "Commit fetch failed:",
+          err.response?.data || err.message
+        );
+      }
+    }
+
+    changedReadmeFiles = [
+      ...new Set(changedReadmeFiles),
+    ];
+
+    console.log(
+      "Changed README/doc files:",
+      changedReadmeFiles
+    );
+
+   
+    // Here Only changed markdown/doc files are enriched
+    console.log(
+      "Calling API for selective README enrichment"
+    );
 
     const response = await axios.post(
       "http://localhost:4000/enrich/github",
-      { repo }
+      {
+        repo,
+        changedFiles: changedReadmeFiles,
+      }
     );
 
     console.log(
@@ -32,96 +147,71 @@ module.exports = async function (data, channel) {
     );
 
     const repoDetails = response.data.repoDetails;
-    const readme = response.data.readme;
+    
+    const readmes = 
+    response.data.readme || [];
 
-    console.log("=================================");
-    console.log(
-      "README RECEIVED IN HANDLER:",
-      readme?.slice(0, 100)
-    );
-    console.log("=================================");
+    let changedReadmes = [];
 
-    const parsed = extractReadmeData(readme);
+    for(const readmeObj of readmes){
 
-    console.log("PARSED README:", parsed);
+         const file = readmeObj.file;
+         const latestContent = readmeObj.content;
 
-    const commits = payload.commits || [];
-    let commitDetails = [];
+         const readmeKey = 
+         `${repo}:${file}`;
 
-    for (const commit of commits) {
-      try {
-        console.log("Fetching commit:", commit.id);
+         if (
+          !hashReadmeChanged(
+            readmeKey,
+            latestContent
+          )
+         ){
+             
+              console.log(
+                `${file} has no new changes`
+              );
 
-        const commitRes = await axios.get(
-          `https://api.github.com/repos/${repo}/commits/${commit.id}`,
-          {
-            headers: process.env.GITHUB_TOKEN
-              ? {
-                  Authorization: `Bearer ${process.env.GITHUB_TOKEN}`,
-                }
-              : {},
-          }
-        );
+              continue;
+         }
 
-        const files = (commitRes.data.files || [])
-          .filter((file) => {
-            const filename = file.filename.toLowerCase();
+         const oldContent = 
+         getReadmeContent(readmeKey);
 
-            const isImportantDoc =
-              filename.includes("readme") ||
-              filename.endsWith(".md") ||
-              filename.includes("docs") ||
-              filename.endsWith("package.json") ||
-              filename.endsWith("docker-compose.yml") ||
-              filename.endsWith(".yaml") ||
-              filename.endsWith(".yml");
+         const onlyNewContent = 
+         extractAddedContent(
+          oldContent,
+          latestContent
+         );
 
-            const isSmallPatch =
-              file.patch && file.patch.length < 1000;
+         if(
+          !onlyNewContent.trim()
+         ){
+            
+          console.log(`No addec content in ${file}`);
+           continue;
+         }
 
-            return isImportantDoc || isSmallPatch;
-          })
-          .map((file) => {
-            const filename = file.filename.toLowerCase();
-          
-            return {
-              filename: file.filename,
-              status: file.status,
-              additions: file.additions,
-              deletions: file.deletions,
-              changes: file.changes,
-          
-              
-              patch: filename.includes("readme")
-                ? null
-                : file.patch
-                  ? file.patch.slice(0, 1000)
-                  : null,
-            };
-          });
+         console.log(`New Content found in ${file}`);
 
-        if (files.length === 0) {
-          console.log(
-            "No important file changes found for commit:",
-            commit.id
-          );
-          continue;
-        }
+         const parsed = extractReadmeData(
+          onlyNewContent
+         );
 
-        commitDetails.push({
-          commitId: commit.id,
-          message: commit.message,
-          author: commit.author?.name || null,
-          timestamp: commit.timestamp || null,
-          files,
-        });
+         changedReadmes.push({
 
-      } catch (err) {
-        console.log(
-          "Commit fetch failed:",
-          err.response?.data || err.message
-        );
-      }
+            file,
+
+            changedContent:
+            onlyNewContent,
+
+            parsed,
+         });
+
+         updateReadmeContent(
+          readmeKey,
+          latestContent
+         );
     }
 
     console.log(
@@ -130,12 +220,21 @@ module.exports = async function (data, channel) {
     );
 
     const fullData = {
-      repo,
-      name: repoDetails.name,
-      description: repoDetails.description,
 
-      readmeSummary: parsed.description || "",
-      features: parsed.features || [],
+      repo,
+
+      name: repoDetails.name,
+
+      description:
+        repoDetails.description,
+
+      // readmeSummary:
+      //   parsed.description || "",
+
+      // features:
+      //   parsed.features || [],
+
+      changedReadmes,
 
       commits: commitDetails,
     };
@@ -145,13 +244,18 @@ module.exports = async function (data, channel) {
       JSON.stringify(fullData, null, 2)
     );
 
-    if (!hasChanged(repo, fullData)) {
-      console.log("Github data has not changed");
+    if (!hashChanged(repo, fullData)) {
+
+      console.log(
+        "Github data has not changed"
+      );
+
       return;
     }
 
     channel.sendToQueue(
       "normalization_queue",
+
       Buffer.from(
         JSON.stringify({
           source: "github",
@@ -159,12 +263,16 @@ module.exports = async function (data, channel) {
           fullData,
         })
       ),
+
       { persistent: true }
     );
 
-    console.log("Github sent to Normalization_Queue");
+    console.log(
+      "Github sent to Normalization_Queue"
+    );
 
   } catch (err) {
+
     console.log(
       "Github error:",
       err.response?.data || err.message

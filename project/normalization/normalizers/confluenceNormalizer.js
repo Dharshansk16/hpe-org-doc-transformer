@@ -1,33 +1,43 @@
 const { buildNormalizedEvent } = require("../schema");
 
 module.exports = function normalizeConfluence({ payload, fullData }) {
+  const eventType = payload.eventType || "page_event";
 
   return buildNormalizedEvent({
-    doc_id: String(fullData.pageId),
-
+    id: String(fullData.pageId),
     source: "confluence",
+    type: eventType,
 
-    title: fullData.title,
+    resource: {
+      id: String(fullData.pageId),
+      name: fullData.title || String(fullData.pageId),
+      url: fullData.url || "",
+      status: "active",
+    },
 
-    content: fullData.content,
+    actor: {
+      id: fullData.updatedBy?.accountId || null,
+      name: fullData.updatedBy?.displayName || null,
+      email: null,
+    },
 
-    metadata: {
-      version: fullData.version,
-      eventType: fullData.eventType,
-      space: fullData.space,
-      url: fullData.url,
-
-      updatedBy: {
-        accountId: fullData.updatedBy?.accountId || null,
-        displayName: fullData.updatedBy?.displayName || null,
+    changes: {
+      files: [],
+      commits: [],
+      fieldChanges: [],
+      pageChanges: {
+        versionBefore: fullData.change?.versionBefore,
+        versionAfter: fullData.change?.versionAfter,
+        spaceKey: fullData.space || null,
+        diffUrl: fullData.url ? `${fullData.url}?diff` : null,
       },
+      boardChanges: [],
+    },
 
-      change: {
-        versionBefore: fullData.change?.versionBefore || null,
-        versionAfter: fullData.change?.versionAfter || null,
-      },
-
-      timestamp: payload.timestamp || null,
+    meta: {
+      spaceKey: fullData.space || null,
+      parentPageId: null,
+      lastModified: payload.timestamp || null,
     },
   });
 };

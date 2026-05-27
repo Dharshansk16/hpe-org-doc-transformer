@@ -16,6 +16,7 @@ public class t{
         System.out.println("Demo check for github normalization");
         System.out.println("Test after changing schema");
         System.out.println("Second Test after changing schema");
+        System.out.println("Check after adding concurrently run-dev");
     }
     public static int binSearch(int nums[], int targetElement)
     {

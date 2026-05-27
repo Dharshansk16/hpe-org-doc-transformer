@@ -1,20 +1,13 @@
 function extractReadmeData(readme){
-    if(!readme){
-        return {};
+    if(!readme || !readme.trim()){
+        return { description: "", features: [] };
     }
-
-    const descMatch = readme.match(/#.*\n([\s\S]*?)(\n##|\n$)/);
-    const description = descMatch ? descMatch[1].trim() : "";
-
-    const featuresMatch = readme.match(/## Features([\s\S]*?)(\n##|\n$)/i);
-
-    const features = featuresMatch 
-    ? featuresMatch[1].split("\n")
-    .map(line => line.replace(/[-*]/g, "").trim())
-    .filter(Boolean)
-    : [];
-
-    return {description , features};
-
+    if(readme.includes("#FILE:")){
+        const features = readme.split("\n").map(l=>l.trim()).filter(l=>l.startsWith("-")||l.startsWith("*")).map(l=>l.replace(/^[-*]\s*/,""));
+        return { description: readme.trim(), features };
+    }
+    let description = readme.trim();
+    let features = readme.split("\n").map(l=>l.trim()).filter(l=>l.startsWith("-")||l.startsWith("*")).map(l=>l.replace(/^[-*]\s*/,""));
+    return { description, features };
 }
 module.exports = {extractReadmeData};
