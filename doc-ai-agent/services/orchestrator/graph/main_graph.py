@@ -47,7 +47,7 @@ def build_graph():
     )
     classifier.add_conditional_edges(
         "check_duplicate",
-        lambda s: END if s["is_duplicate"] else "generate_fingerprint"
+        lambda s: "assign_node" if s["is_duplicate"] else "generate_fingerprint"
     )
     classifier.add_edge("generate_fingerprint", "decide_route")
     classifier.add_conditional_edges("decide_route", next_route)
