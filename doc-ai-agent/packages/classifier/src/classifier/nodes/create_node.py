@@ -2,15 +2,12 @@ import json
 import logging
 import re
 import uuid
-from datetime import date
-
 from doc_types.state import ClassifierState
 from agent.llm import get_llm
 from agent.prompts.readme_prompt import NEW_GROUP_README_PROMPT
 from classifier.ingestion.ingest import detect_doc_info, ingest_document
-from classifier.prototypes import assign_group
 from classifier.utils.github_client import GitHubClient
-from db import insert_new_group
+from db import get_connection, insert_new_group
 
 logger = logging.getLogger(__name__)
 
@@ -114,24 +111,32 @@ async def create_new_group(state: ClassifierState) -> ClassifierState:
 
        
         try:
-            #new group created
+            # new group created
             group_uuid = str(uuid.uuid4())
-            insert_new_group(group_uuid, group_name, group_summary=readme_content)
 
             content = state.get("content") or ""
             doc_info = detect_doc_info(content, title=state.get("title"))
-            
-            #[TODO: Dharshan][mid]- set correct doc path
-            doc_path =f"{group_name}/{state.get("source")}/{state.get('doc_id')}"
-            ingest_document(
-                doc_id=state["doc_id"],
-                doc_path=doc_path,
-                group_id=group_uuid,
-                content=content,
-                doc_info=doc_info,
-            )
 
-            # assign_group(state["doc_id"], group_uuid)
+            # [TODO: Dharshan][mid]- set correct doc path
+            doc_path = f"{group_name}/{state.get('source')}/{state.get('doc_id')}"
+
+            with get_connection() as conn:
+                with conn.transaction():
+                    insert_new_group(
+                        group_uuid,
+                        group_name,
+                        group_summary=readme_content,
+                        conn=conn,
+                    )
+                    ingest_document(
+                        doc_id=state["doc_id"],
+                        doc_path=doc_path,
+                        group_id=group_uuid,
+                        content=content,
+                        doc_info=doc_info,
+                        conn=conn,
+                    )
+
             state["assigned_group_id"] = group_uuid
             state["db_update_status"] = "created"
             logger.info(

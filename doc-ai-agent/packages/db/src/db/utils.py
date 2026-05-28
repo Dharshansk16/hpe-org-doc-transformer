@@ -1,3 +1,4 @@
+import ast
 from collections.abc import Sequence
 from typing import Any
 import psycopg
@@ -18,3 +19,10 @@ def _run_write(query: str, params: Sequence[Any]) -> None:
                     cursor.execute(query, params)
     except psycopg.Error as exc:
         raise DatabaseConnectionError("Database write failed") from exc
+    
+
+
+def parse_embedding(raw: Any) -> list[float]:
+    if isinstance(raw, str):
+        raw = ast.literal_eval(raw)
+    return [float(v) for v in raw]

@@ -1,22 +1,21 @@
 from typing import Any
+
+from db.connection import get_connection
 from .utils import _vector_literal
 
+
 def write_to_db(
+    conn: Any,
     doc_id: str,
     doc_path: str | None,
     group_id: str | None,
     content: str,
-    doc_info: dict[str, Any],
+    segment_count: int,
+    total_chunks: int,
     chunks: list[dict[str, Any]],
     segments: list[dict[str, Any]],
-    conn,
 ) -> None:
-    total_chunks = len(chunks)
-    segment_count = len(segments)
-
     with conn.cursor() as cursor:
-
-        # documents
         cursor.execute(
             """
             INSERT INTO documents (id, doc_path, group_id, content, segment_count)
@@ -30,13 +29,13 @@ def write_to_db(
             [doc_id, doc_path, group_id, content, segment_count],
         )
 
-        # document_chunks
+        #document_chunks
         for chunk in chunks:
             cursor.execute(
                 """
                 INSERT INTO document_chunks
                     (doc_id, group_id, chunk_index, total_chunks,
-                     chunk_text, embedding)
+                    chunk_text, embedding)
                 VALUES (%s, %s, %s, %s, %s, %s::vector)
                 ON CONFLICT (doc_id, chunk_index) DO UPDATE SET
                     chunk_text   = EXCLUDED.chunk_text,
@@ -70,4 +69,3 @@ def write_to_db(
                     _vector_literal(segment["embedding"]),
                 ],
             )
-
