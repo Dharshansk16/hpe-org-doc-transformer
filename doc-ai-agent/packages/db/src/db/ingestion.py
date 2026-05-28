@@ -1,6 +1,4 @@
 from typing import Any
-
-from db.connection import get_connection
 from .utils import _vector_literal
 
 
@@ -24,7 +22,7 @@ def write_to_db(
                 doc_path       = EXCLUDED.doc_path,
                 group_id       = EXCLUDED.group_id,
                 content        = EXCLUDED.content,
-                segment_count  = EXCLUDED.segment_count,
+                segment_count  = EXCLUDED.segment_count
             """,
             [doc_id, doc_path, group_id, content, segment_count],
         )
@@ -40,7 +38,7 @@ def write_to_db(
                 ON CONFLICT (doc_id, chunk_index) DO UPDATE SET
                     chunk_text   = EXCLUDED.chunk_text,
                     embedding    = EXCLUDED.embedding,
-                    total_chunks = EXCLUDED.total_chunks,
+                    total_chunks = EXCLUDED.total_chunks
                 """,
                 [
                     doc_id,

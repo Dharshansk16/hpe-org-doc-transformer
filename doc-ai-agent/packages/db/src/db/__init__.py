@@ -1,4 +1,4 @@
-from .connection import close_connection, get_connection, get_database_url
+from .connection import  get_connection, get_database_url
 from .documents import insert_document, get_document_assignment, update_document
 from .groups import search_similar_centroid, search_similar_prototypes, update_centroid, insert_new_group
 from .chunks import insert_chunks, search_similar_chunks_by_group
@@ -11,7 +11,6 @@ The __all__ variable defines the public API of this package.
 """
 
 __all__ = [
-    "close_connection",
     "get_connection",
     "get_database_url",
     "insert_chunks",

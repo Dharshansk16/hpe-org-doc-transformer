@@ -14,7 +14,7 @@ def _vector_literal(values: Vector) -> str:
 def _run_write(query: str, params: Sequence[Any]) -> None:
     try:
         with get_connection() as connection:
-            with connection.transaction():
+            with connection.transaction(): 
                 with connection.cursor() as cursor:
                     cursor.execute(query, params)
     except psycopg.Error as exc:
