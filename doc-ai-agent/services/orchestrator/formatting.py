@@ -66,6 +66,7 @@ def print_result(state: dict) -> None:
     print("  CLASSIFICATION")
     print(THIN_SEP)
     print(f"  route      : {badge(route)}")
+    print(f"  doc_type   : {state.get('doc_type') or '-'}")
     print(f"  decision   : {state.get('decision_path') or '-'}")
     print(f"  assigned   : {state.get('assigned_group_id') or '-'}")
     print(f"  create_new : {state.get('create_new_group')}")

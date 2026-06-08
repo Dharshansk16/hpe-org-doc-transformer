@@ -29,6 +29,9 @@ def build_initial_state(doc: NormalisedDocument)-> ClassifierState:
         #Embedding
         embedding=None,
 
+        #Doc type classification
+        doc_type=None,
+
         #Group centroid search
         similar_group_candidates=[],
         top_similarity_score=0.0,

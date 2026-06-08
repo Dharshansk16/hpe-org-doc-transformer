@@ -34,21 +34,35 @@ def generate_fingerprint(state: ClassifierState) -> ClassifierState:
         
         try:
             parsed = json.loads(cleaned)
-            if isinstance(parsed, dict) and isinstance(parsed.get("fingerprint"), str):
-                state["fingerprint"] = parsed["fingerprint"]
+            if isinstance(parsed, dict):
+                if isinstance(parsed.get("fingerprint"), str):
+                    state["fingerprint"] = parsed["fingerprint"]
+                else:
+                    state["fingerprint"] = cleaned
+                
+                doc_type = parsed.get("doc_type", "").strip().lower()
+                valid_types = {"troubleshooting", "design", "requirements", "runbook", "reference"}
+                if doc_type in valid_types:
+                    state["doc_type"] = doc_type
+                else:
+                    logger.warning(f"Invalid doc_type '{doc_type}' generated, falling back to 'reference'")
+                    state["doc_type"] = "reference"
             else:
                 state["fingerprint"] = cleaned
+                state["doc_type"] = "reference"
         except json.JSONDecodeError as e:
             logger.error(
                 f"Fingerprint JSON parse failed for doc '{state.get('title', 'unknown')}': {e}\n"
                 f"Raw response: {response_text[:500]}"
             )
             state["fingerprint"] = cleaned
+            state["doc_type"] = "reference"
             state.setdefault("errors", []).append(f"JSON parse error: {str(e)}")
 
     except Exception as e:
         logger.error(f"Error generating fingerprint for doc '{state.get('title', 'unknown')}': {e}")
         state["fingerprint"] = None
+        state["doc_type"] = "reference"
         state.setdefault("errors", []).append(f"Error generating fingerprint: {str(e)}")
 
     return state

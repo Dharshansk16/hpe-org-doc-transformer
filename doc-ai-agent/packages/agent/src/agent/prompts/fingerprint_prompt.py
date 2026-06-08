@@ -48,10 +48,20 @@ FINGERPRINT CONSTRUCTION RULES:
    Team names, component names, service names, API names, feature names
    These are the anchors that tie cross-tool documents together.
 
+7. DOC TYPE CLASSIFICATION (always include)
+   Classify the document into EXACTLY ONE of these five categories:
+   - troubleshooting: Error fixes, debugging guides, known issues, incident post-mortems.
+   - design: Architecture documents, system design proposals, technical decisions (ADRs).
+   - requirements: Functional and non-functional specifications, user stories, product requirements.
+   - runbook: Operational procedures, deployment steps, how-to guides.
+   - reference: API documentation, configuration references, data dictionaries.
+   Choose the single best-fit category based on the document's primary purpose.
+
 OUTPUT FORMAT — return valid JSON only, no markdown:
 {{
    "fingerprint": "<single dense paragraph combining all signals above, written as 
                             declarative statements, NO tool-specific jargon, 150-200 words>",
+   "doc_type": "<one of: troubleshooting, design, requirements, runbook, reference>",
    "project_identity": "<normalized project/product/service name>",
    "functional_domain": "<2-4 words>",
    "doc_intent": "<one of the intent types above>",
