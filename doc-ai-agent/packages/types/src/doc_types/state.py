@@ -10,6 +10,9 @@ class ClassifierState(TypedDict):
     
     """Optional fingerprint field that holds data that can be used for efficient matching."""
     fingerprint: Optional[str]
+
+    """Document type classification (troubleshooting, design, requirements, runbook, reference)."""
+    doc_type: Optional[str]
     
     """validation check"""
     is_valid: Optional[bool] 

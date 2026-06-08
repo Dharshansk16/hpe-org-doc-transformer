@@ -114,10 +114,11 @@ async def auto_assign(state: ClassifierState) -> ClassifierState:
 
         base_path = get_settings().github_base_path
         source = state.get("source") or "unknown-source"
+        doc_type = state.get("doc_type") or "reference"
         doc_id = state.get("doc_id") or "unknown-doc"
         doc_filename = doc_id if doc_id.lower().endswith(".md") else f"{doc_id}.md"
         doc_path = state.get("existing_path") or (
-            f"{base_path}/{group_name}/{source}/{doc_filename}"
+            f"{base_path}/{group_name}/{doc_type}/{source}/{doc_filename}"
         )
         await github.create_or_update_file(
             doc_path,
@@ -143,11 +144,12 @@ async def auto_assign(state: ClassifierState) -> ClassifierState:
                 doc_id = state.get("doc_id") or "unknown-doc"
                 base_path = get_settings().github_base_path
                 source = state.get("source") or "unknown-source"
+                doc_type = state.get("doc_type") or "reference"
                 doc_filename = (
                     doc_id if doc_id.lower().endswith(".md") else f"{doc_id}.md"
                 )
                 doc_path = state.get("existing_path") or (
-                    f"{base_path}/{group_name}/{source}/{doc_filename}"
+                    f"{base_path}/{group_name}/{doc_type}/{source}/{doc_filename}"
                 )
 
                 chunks = chunk_document(content, doc_info)
