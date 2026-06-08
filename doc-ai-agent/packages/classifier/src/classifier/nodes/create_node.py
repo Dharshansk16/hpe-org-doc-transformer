@@ -62,10 +62,11 @@ def _doc_filename(doc_id: str) -> str:
     return f"{doc_id}.md"
 
 
-def _build_doc_path(base_path: str, group_name: str, source: str, doc_id: str) -> str:
+def _build_doc_path(base_path: str, group_name: str, doc_type: str, source: str, doc_id: str) -> str:
+    safe_doc_type = doc_type or "reference"
     safe_source = source or "unknown-source"
     safe_doc_id = _doc_filename(doc_id)
-    return f"{base_path}/{group_name}/{safe_source}/{safe_doc_id}"
+    return f"{base_path}/{group_name}/{safe_doc_type}/{safe_source}/{safe_doc_id}"
 
 
 def _generate_group_name(state: ClassifierState, llm) -> str:
@@ -133,7 +134,8 @@ async def create_new_group(state: ClassifierState) -> ClassifierState:
             doc_id = state.get("doc_id") or "unknown-doc"
             base_path = get_settings().github_base_path
             source = state.get("source") or "unknown-source"
-            doc_path = _build_doc_path(base_path, group_name, source, doc_id)
+            doc_type = state.get("doc_type") or "reference"
+            doc_path = _build_doc_path(base_path, group_name, doc_type, source, doc_id)
             await github.create_or_update_file(
                 doc_path,
                 state.get("content") or "",
@@ -163,8 +165,9 @@ async def create_new_group(state: ClassifierState) -> ClassifierState:
 
             base_path = get_settings().github_base_path
             source = state.get("source") or "unknown-source"
+            doc_type = state.get("doc_type") or "reference"
             doc_id = state.get("doc_id") or "unknown-doc"
-            doc_path = _build_doc_path(base_path, group_name, source, doc_id)
+            doc_path = _build_doc_path(base_path, group_name, doc_type, source, doc_id)
             chunks = chunk_document(content, doc_info)
 
             embed_chunks(chunks)
