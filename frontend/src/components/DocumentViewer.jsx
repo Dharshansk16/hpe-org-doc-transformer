@@ -20,6 +20,15 @@ function DocumentViewer({ document, onClose }) {
         {document.path}
       </p>
 
+      {document.url && (
+        <p>
+          <strong>Original Source:</strong>{" "}
+          <a href={document.url} target="_blank" rel="noreferrer" style={{ color: "#007bff", textDecoration: "underline" }}>
+            Open Link
+          </a>
+        </p>
+      )}
+
       <hr />
 
       <p>{document.content}</p>

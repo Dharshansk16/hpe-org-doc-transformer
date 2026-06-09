@@ -34,10 +34,8 @@ function ChatArea({ setSelectedDoc }) {
         ...prev,
         {
           role: "assistant",
-          content: data.results.length
-            ? `Found ${data.results.length} relevant chunk(s).`
-            : "No documents found for your query.",
-          sources: data.results ?? [],
+          content: data.answer || "No answer generated.",
+          sources: data.sources || [],
         },
       ]);
     } catch (err) {
@@ -64,27 +62,18 @@ function ChatArea({ setSelectedDoc }) {
       <div className="messages">
         {messages.map((msg, index) => (
           <div key={index}>
-            <Message message={msg} />
-
-            {msg.sources &&
-              msg.sources.map((source, i) => (
-                <SearchResultCard
-                  key={i}
-                  data={{
-                    title: `Document ${source.doc_id}`,
-                    source: `Similarity: ${(source.similarity * 100).toFixed(1)}%`,
-                    similarity: source.similarity,
-                  }}
-                  onClick={() =>
-                    setSelectedDoc({
-                      title: `Document ${source.doc_id}`,
-                      source: `doc_id: ${source.doc_id}`,
-                      path: `doc_id: ${source.doc_id}`,
-                      content: source.chunk_text,
-                    })
-                  }
-                />
-              ))}
+            <Message
+              message={msg}
+              onCiteClick={(source) =>
+                setSelectedDoc({
+                  title: `Document ${source.doc_id}`,
+                  source: `Similarity: ${(source.similarity * 100).toFixed(1)}%`,
+                  path: source.doc_path,
+                  content: source.chunk_text,
+                  url: source.url,
+                })
+              }
+            />
           </div>
         ))}
 
