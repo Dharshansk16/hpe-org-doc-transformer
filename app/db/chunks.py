@@ -21,17 +21,21 @@ def search_similar_chunks(
     vector = _vector_literal(embedding)
 
     query = """
-        WITH query_vec AS (
-            SELECT %s::vector AS vec
-        )
-        SELECT
-            dc.doc_id,
-            dc.chunk_text,
-            1 - (dc.embedding <=> q.vec) AS similarity
-        FROM document_chunks dc, query_vec q
-        ORDER BY dc.embedding <=> q.vec
-        LIMIT %s
-    """
+    WITH query_vec AS (
+        SELECT %s::vector AS vec
+    )
+    SELECT
+        dc.doc_id,
+        d.doc_path,
+        dc.chunk_text,
+        1 - (dc.embedding <=> q.vec) AS similarity
+    FROM document_chunks dc
+    JOIN documents d
+        ON dc.doc_id = d.id
+    CROSS JOIN query_vec q
+    ORDER BY dc.embedding <=> q.vec
+    LIMIT %s
+"""
 
     try:
         with get_connection(autocommit=True) as connection:

@@ -4,4 +4,5 @@ class SearchRequest(BaseModel):
     query:str
     
 class SearchResponse(BaseModel):
-    results: list
+    answer: str
+    sources: list
