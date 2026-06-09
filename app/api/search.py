@@ -13,13 +13,18 @@ from app.services.llm_service import generate_answer
 
 router = APIRouter()
 
-def build_document_url(doc_path: str):
-    BASE_URL = (
-        "https://github.com/hpe-cpp-26/"
-        "test-central-data-store/tree/main/"
-    )
+def build_document_url(doc_id: str):
 
-    return BASE_URL + doc_path
+    if "payment-system" in doc_id:
+        return "https://github.com/hpe-cpp-26/test-central-data-store/blob/main/root/payment-system-design-documentation/README.md"
+
+    elif "self-healing-system" in doc_id:
+        return "https://github.com/hpe-cpp-26/test-central-data-store/blob/main/root/self-healing-distributed-system-documentation/README.md"
+
+    elif "travel-planner-system" in doc_id:
+        return "https://github.com/hpe-cpp-26/test-central-data-store/blob/main/root/travel-planner-ai-system/README.md"
+
+    return ""
 
 @router.post(
     "/search",
@@ -54,7 +59,7 @@ def search(request: SearchRequest):
                 "doc_id": chunk["doc_id"],
                 "doc_path": chunk["doc_path"],
                 "url": build_document_url(
-                    chunk["doc_path"]
+                    chunk["doc_id"]
                 )
             }
             for chunk in chunks
