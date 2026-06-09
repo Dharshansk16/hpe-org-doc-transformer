@@ -34,7 +34,8 @@ def search(request: SearchRequest):
         "answer": answer,
         "sources": [
             {
-                "doc_id": chunk["doc_id"]
+                "doc_id": chunk["doc_id"],
+                "doc_path": chunk["doc_path"]
             }
             for chunk in chunks
         ]
