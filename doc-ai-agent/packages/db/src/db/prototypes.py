@@ -60,9 +60,10 @@ def refresh_doc_count(group_id: str, conn: Any) -> None:
 
 
 def count_buffered(group_id: str, conn: Any) -> int:
+    """Count distinct documents (not rows) in the buffer for a group."""
     with conn.cursor() as cursor:
         cursor.execute(
-            "SELECT COUNT(*) AS total FROM prototype_buffer WHERE group_id = %s",
+            "SELECT COUNT(DISTINCT doc_id) AS total FROM prototype_buffer WHERE group_id = %s",
             [group_id],
         )
         row = cursor.fetchone()
@@ -118,6 +119,17 @@ def clear_buffer(group_id: str, conn: Any) -> None:
             "DELETE FROM prototype_buffer WHERE group_id = %s",
             [group_id],
         )
+
+
+def has_prototypes(group_id: str, conn: Any) -> bool:
+    """Return True if the group already has computed prototypes."""
+    with conn.cursor() as cursor:
+        cursor.execute(
+            "SELECT 1 FROM group_prototypes WHERE group_id = %s LIMIT 1",
+            [group_id],
+        )
+        return cursor.fetchone() is not None
+
 
 def update_proto_count(group_id:str, count: int, conn: Any) -> None:
     with conn.cursor() as cursor:
