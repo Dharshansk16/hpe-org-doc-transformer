@@ -57,16 +57,14 @@ def search_similar_groups(embedding: list[float]) -> list[dict]:
         min_similarity=settings.review_threshold)
     
     proto_groups = aggregate_group_candidates(similar_prototypes or [])
-    if len(proto_groups) >=settings.min_groups_for_review:
-        return proto_groups
 
     #buffer hits
-    similar_bufffers = search_similar_buffer(
+    similar_buffers = search_similar_buffer(
         embedding=embedding,
         limit=20,
         min_similarity=settings.review_threshold-0.02
         )
-    buffer_groups = aggregate_group_candidates(similar_bufffers or [])
+    buffer_groups = aggregate_group_candidates(similar_buffers or [])
 
 
     merged = merge_group_candidates(proto_groups, buffer_groups)
