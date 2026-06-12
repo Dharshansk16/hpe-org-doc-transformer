@@ -4,8 +4,8 @@ import logging
 
 from typing import Any
 
-from db import refresh_buffer_for_doc, refresh_doc_count, count_buffered, fetch_buffer_embeddings
-from db.prototypes import upsert_prototypes, clear_buffer, update_proto_count
+from db import refresh_buffer_for_doc, refresh_doc_count, count_buffered, fetch_buffer_embeddings, fetch_all_group_embeddings
+from db.prototypes import upsert_prototypes, clear_buffer, update_proto_count, has_prototypes
 from .utils import cosine_similarity
 from .segments import kmeans, nearest_centroid
 
@@ -29,12 +29,19 @@ def assign_group(
     refresh_doc_count(group_id, conn)
 
     buffered = count_buffered(group_id, conn)
-    if buffered >= 40:
-        embeddings = fetch_buffer_embeddings(group_id, conn)
+    if buffered >= 20:
+        embeddings = fetch_all_group_embeddings(group_id, conn)
         prototypes = compute_medoids(embeddings)
         upsert_prototypes(group_id, prototypes, conn)
         clear_buffer(group_id, conn)
         update_proto_count(group_id, len(prototypes), conn)
+    elif not has_prototypes(group_id, conn):
+        embeddings = fetch_all_group_embeddings(group_id, conn)
+        if embeddings:
+            prototypes = compute_medoids(embeddings)
+            upsert_prototypes(group_id, prototypes, conn)
+            clear_buffer(group_id, conn)
+            update_proto_count(group_id, len(prototypes), conn)
 
 
 def compute_medoids(embeddings: list[list[float]]) -> list[list[float]]:
@@ -51,7 +58,7 @@ def compute_medoids(embeddings: list[list[float]]) -> list[list[float]]:
         return [embeddings[0], embeddings[1], embeddings[2]]
 
 
-    k = min(5, max(2, n // 10))
+    k = min(20, max(2, n // 20))
     centroids = kmeans(embeddings, k)
 
     assignments: list[list[int]] = [[] for _ in range(len(centroids))]

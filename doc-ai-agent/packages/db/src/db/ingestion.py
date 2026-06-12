@@ -23,10 +23,6 @@ def write_to_db(
             [doc_id],
         )
         cursor.execute(
-            "DELETE FROM prototype_buffer WHERE doc_id = %s",
-            [doc_id],
-        )
-        cursor.execute(
             """
             INSERT INTO documents (id, doc_path, group_id, content, segment_count)
             VALUES (%s, %s, %s, %s, %s)
