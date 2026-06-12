@@ -32,8 +32,8 @@ function ChatArea({ setSelectedDoc }) {
     try {
       const data = await searchDocuments(userQuery);
 
-      const normalizedSources = (data.sources || []).slice(0, 3).map((s) => ({
-        title: formatTitle(s.doc_id),
+      const normalizedSources = (data.sources || []).map((s) => ({
+        title: s.title || formatTitle(s.doc_id),
         path: s.doc_path || "",
         content: s.chunk_text || "No content available.",
         url: s.url || null,

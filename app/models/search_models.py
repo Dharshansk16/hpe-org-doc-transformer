@@ -6,6 +6,7 @@ class Source(BaseModel):
     url: str
     chunk_text: str
     similarity: float
+    title: str | None = None
 
 class SearchRequest(BaseModel):
     query:str
