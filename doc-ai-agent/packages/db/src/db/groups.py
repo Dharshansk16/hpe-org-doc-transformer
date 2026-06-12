@@ -90,7 +90,7 @@ def search_similar_segments(
     embedding: Vector,
     *,
     limit: int = 20,
-    min_similarity: float = 0.35,
+    min_similarity: float = 0.37,
 ) -> list[dict[str, Any]]:
     vector = _vector_literal(embedding)
 
