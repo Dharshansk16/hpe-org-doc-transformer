@@ -4,7 +4,7 @@ from .groups import  search_similar_prototypes, insert_new_group, search_similar
 from .chunks import insert_chunks, search_similar_chunks_by_group
 from .cache import insert_doc_embedding_cache, fetch_embedding_from_cache
 from .ingestion import write_to_db
-from .prototypes import refresh_buffer_for_doc, refresh_doc_count, count_buffered, fetch_buffer_embeddings
+from .prototypes import refresh_buffer_for_doc, refresh_doc_count, count_buffered, fetch_buffer_embeddings, fetch_all_group_embeddings
 
 """
 The __all__ variable defines the public API of this package. 
@@ -32,6 +32,7 @@ __all__ = [
     "count_buffered",
     "fetch_buffer_embeddings",
     "search_similar_buffer",
-    "search_similar_segments"
+    "search_similar_segments",
+    "fetch_all_group_embeddings"
 ]
 

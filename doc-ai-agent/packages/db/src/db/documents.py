@@ -75,6 +75,9 @@ def update_document(
     if group_id is not None:
         assignments.append("group_id = %s")
         params.append(group_id)
+        _run_write("UPDATE document_chunks SET group_id = %s WHERE doc_id = %s", [group_id, document_id])
+        _run_write("UPDATE document_segments SET group_id = %s WHERE doc_id = %s", [group_id, document_id])
+        _run_write("UPDATE prototype_buffer SET group_id = %s WHERE doc_id = %s", [group_id, document_id])
     if content is not None:
         assignments.append("content = %s")
         params.append(content)

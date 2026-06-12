@@ -59,6 +59,7 @@ def search_similar_buffer(
         )
         SELECT
             pb.group_id AS id,
+            pb.doc_id AS doc_id,
             g.group_name AS name,
             g.doc_count,
             g.proto_count,
@@ -99,6 +100,7 @@ def search_similar_segments(
         )
         SELECT
             ds.group_id AS id,
+            ds.doc_id AS doc_id,
             g.group_name AS name,
             g.doc_count,
             g.proto_count,

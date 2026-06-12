@@ -79,6 +79,16 @@ def fetch_buffer_embeddings(group_id: str, conn: Any) -> list[list[float]]:
     return [parse_embedding(row.get("embedding")) for row in rows]
 
 
+def fetch_all_group_embeddings(group_id: str, conn: Any) -> list[list[float]]:
+    with conn.cursor() as cursor:
+        cursor.execute(
+            "SELECT embedding FROM document_segments WHERE group_id = %s",
+            [group_id],
+        )
+        rows = cursor.fetchall()
+    return [parse_embedding(row.get("embedding")) for row in rows]
+
+
 def upsert_prototypes(
     group_id: str,
     prototypes: list[list[float]],
