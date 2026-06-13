@@ -57,7 +57,7 @@ def generate_answer(query: str, retrieval_output: dict):
             return f"{retrieval_confidence_str}\n\n{call_ollama(prompt)}"
             
         response = client.models.generate_content(
-            model="gemini-3.1-flash-lite",
+            model="gemini-2.5-flash",
             contents=prompt
         )
         return f"{retrieval_confidence_str}\n\n{response.text}"
