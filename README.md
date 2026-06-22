@@ -17,6 +17,9 @@
 - [Week 10 — Project: Implementation and Review](#week-10--transforming-organisational-docs-using-doc-ai-agent)
 - [Week 11 — Project: Implementation and Review](#week-11--transforming-organisational-docs-using-doc-ai-agent)
 - [Week 12 — Project: Implementation and Review](#week-12--transforming-organisational-docs-using-doc-ai-agent)
+- [Week 13 — Project: Implementation and Review](#week-12--transforming-organisational-docs-using-doc-ai-agent)
+- [Week 14 — Project: Implementation and Review](#week-12--transforming-organisational-docs-using-doc-ai-agent)
+
 
 ---
 
@@ -327,5 +330,42 @@ Troubleshooting
 > Next Steps
 - Implement the higher-level document type classification layer (Requirements / Design / Troubleshooting) on top of the existing source-level  classification.
 Build out the RAG-based search interface
+
+## Week 13 — Transforming Organisational Docs Using Doc AI Agent
+
+**`6/4/2026 – 6/11/2026`**
+
+### What Was Done
+
+Following the mentor's feedback from the previous review, we focused on building a Retrieval-Augmented Generation (RAG) search layer on top of the classified document repository.
+
+#### 3-Layer RAG Architecture
+
+To improve retrieval quality and scalability, we designed and implemented a three-layer retrieval architecture
+we also implemented reranking using cross encoder and citations backed response which source back to the actual documents for better relevance.
+
+### Outcome
+* Successfully built a production-ready RAG service capable of searching across classified organisational documents.
+* Improved retrieval precision through Cross Encoder reranking.
+* Enabled source-grounded answers with end-to-end document traceability.
+
+## Week 14 — Transforming Organisational Docs Using Doc AI Agent
+
+**`6/11/2026 – 6/18/2026`**
+
+This week focused on production readiness, deployment, and database scalability improvements.
+
+### What Was Done
+
+* Dockerised the RAG service and deployed it on an Azure VM.
+* Set up a PostgreSQL + pgvector read replica using WAL publication/subscription replication.
+* Separated read-heavy RAG queries from write-heavy classification workloads.
+
+<img width="716" height="739" alt="image" src="https://github.com/user-attachments/assets/7723703e-8441-483f-b5a3-fc40a9c5e0de" />
+
+
+### Outcome
+
+* Improved system scalability, reliability, and performance by isolating retrieval traffic from document ingestion and classification operations.
 
 _Last updated: June 2026_
