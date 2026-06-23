@@ -27,9 +27,21 @@ turndownService.addRule("confluenceCodeBlock", {
     );
   },
   replacement: function (content, node) {
+    // Extract language from ac:parameter nodes
+    let language = "";
+    const params = node.querySelectorAll("ac\\:parameter");
+    for (const param of params) {
+      if (param.getAttribute("ac:name") === "language") {
+        language = param.textContent.trim().toLowerCase();
+        break;
+      }
+    }
     const bodyNode = node.querySelector("ac\\:plain-text-body, ac\\:rich-text-body");
     const code = bodyNode ? bodyNode.textContent : content;
-    return "\n```\n" + code.trim() + "\n```\n";
+    // Preserve exact whitespace — only strip a single leading/trailing newline
+    // that Confluence often adds inside the CDATA wrapper
+    const cleaned = code.replace(/^\n/, "").replace(/\n$/, "");
+    return "\n```" + language + "\n" + cleaned + "\n```\n";
   },
 });
 

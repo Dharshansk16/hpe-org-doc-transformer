@@ -35,10 +35,18 @@ def process_citations(answer: str, context_blocks: list[dict]):
     """
     Extracts citations from the LLM answer, renumbers them sequentially,
     and returns only the dynamically cited context blocks.
+    Only processes citations outside fenced code blocks to avoid corrupting
+    array indexing syntax like arr[0], items[1], etc.
     """
+    code_block_pattern = re.compile(r'(```[^\n]*\n[\s\S]*?```)', re.MULTILINE)
+    segments = code_block_pattern.split(answer)
+    
+    # Collect cited indices only from non-code segments
     cited_indices = set()
-    for match in re.finditer(r'\[(\d+)\]', answer):
-        cited_indices.add(int(match.group(1)))
+    for segment in segments:
+        if not code_block_pattern.match(segment):
+            for match in re.finditer(r'\[(\d+)\]', segment):
+                cited_indices.add(int(match.group(1)))
         
     sorted_cited_indices = sorted(list(cited_indices))
     
@@ -62,8 +70,16 @@ def process_citations(answer: str, context_blocks: list[dict]):
         # If the LLM hallucinated a citation that doesn't exist, strip the brackets
         # so it doesn't render as a broken interactive link on the UI
         return f"{old_val}" 
-        
-    new_answer = re.sub(r'\[(\d+)\]', replace_cit, answer)
+    
+    #apply citation replacement only to non-code segments
+    new_segments = []
+    for segment in segments:
+        if code_block_pattern.match(segment):
+            new_segments.append(segment)
+        else:
+            new_segments.append(re.sub(r'\[(\d+)\]', replace_cit, segment))
+    
+    new_answer = "".join(new_segments)
     return new_answer, filtered_blocks
 
 @router.post(

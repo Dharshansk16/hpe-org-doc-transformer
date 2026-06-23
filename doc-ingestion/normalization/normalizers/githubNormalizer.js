@@ -1,15 +1,5 @@
 const { buildNormalizedEvent } = require("../schema");
 
-function extractChangedLines(patch) {
-  if (!patch) return null;
-
-  return patch
-    .split("\n")
-    .filter((line) => line.startsWith("+") && !line.startsWith("+++"))
-    .map((line) => line.slice(1).trim())
-    .filter(Boolean)
-    .join(" ");
-}
 
 module.exports = function normalizeGithub({ payload, fullData }) {
   const changedFilesContent = (fullData.commits || [])

@@ -77,10 +77,23 @@ function Message({ message, onCiteClick }) {
               </a>
             );
           },
+          code: ({ className, children, ...props }) => {
+            const match = /language-(\w+)/.exec(className || "");
+            const language = match ? match[1] : null;
+            if (language) {
+              return (
+                <code className={className} data-language={language} {...props}>
+                  {children}
+                </code>
+              );
+            }
+            return <code className={className} {...props}>{children}</code>;
+          },
           pre: ({ children, ...props }) => {
             const codeContent = extractCodeContent(children);
+            const language = extractLanguage(children);
             return (
-              <CodeBlock content={codeContent}>
+              <CodeBlock content={codeContent} language={language}>
                 <pre {...props}>{children}</pre>
               </CodeBlock>
             );
@@ -261,8 +274,27 @@ function extractCodeContent(children) {
   return String(children);
 }
 
+/* ── Helper: extract language from a <pre> block's children ── */
+function extractLanguage(children) {
+  if (!children) return null;
+  if (Array.isArray(children)) {
+    for (const child of children) {
+      const lang = extractLanguage(child);
+      if (lang) return lang;
+    }
+    return null;
+  }
+  if (children.props) {
+    const className = children.props.className || "";
+    const match = /language-(\w+)/.exec(className);
+    if (match) return match[1];
+    return extractLanguage(children.props.children);
+  }
+  return null;
+}
+
 /* ── CodeBlock: wrapper for <pre> with a copy button ── */
-function CodeBlock({ content, children }) {
+function CodeBlock({ content, language, children }) {
   const [copied, setCopied] = useState(false);
 
   const handleCopy = () => {
@@ -274,6 +306,7 @@ function CodeBlock({ content, children }) {
 
   return (
     <div className="code-block-wrapper">
+      {language && <span className="code-block-language">{language}</span>}
       {children}
       <button
         className={`code-block-copy ${copied ? "copied" : ""}`}
