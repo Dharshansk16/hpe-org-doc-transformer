@@ -1382,3 +1382,17 @@ body {
 .code-block-copy.copied {
   color: var(--success);
 }
+
+.code-block-language {
+  position: absolute;
+  top: 6px;
+  left: 10px;
+  font-size: 11px;
+  font-family: var(--font-mono);
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  opacity: 0.7;
+  pointer-events: none;
+  user-select: none;
+}

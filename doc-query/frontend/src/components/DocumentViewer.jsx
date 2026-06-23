@@ -244,7 +244,30 @@ function DocumentViewer({ document, onClose }) {
         <div className="doc-viewer-content" ref={contentRef}>
           <article className="doc-viewer-article">
             <div className="markdown-body doc-reader-typography">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+              <ReactMarkdown
+                remarkPlugins={[remarkGfm]}
+                components={{
+                  code: ({ className, children, ...props }) => {
+                    const match = /language-(\w+)/.exec(className || "");
+                    const language = match ? match[1] : null;
+                    if (language) {
+                      return (
+                        <code className={className} data-language={language} {...props}>
+                          {children}
+                        </code>
+                      );
+                    }
+                    return <code className={className} {...props}>{children}</code>;
+                  },
+                  pre: ({ children, ...props }) => {
+                    return (
+                      <div className="code-block-wrapper">
+                        <pre {...props}>{children}</pre>
+                      </div>
+                    );
+                  },
+                }}
+              >
                 {document.content}
               </ReactMarkdown>
             </div>
