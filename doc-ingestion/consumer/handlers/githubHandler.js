@@ -277,5 +277,6 @@ module.exports = async function (data, channel) {
       "Github error:",
       err.response?.data || err.message
     );
+    throw err;
   }
 };

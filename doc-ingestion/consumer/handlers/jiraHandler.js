@@ -74,5 +74,6 @@ module.exports = async function (data , channel) {
 
   } catch(err){
     console.error("jira error:", err.message);
+    throw err;
   }
 };

@@ -56,5 +56,6 @@ module.exports = async function (data, channel) {
       "Confluence enrichment error:",
       err.response?.data || err.message
     );
+    throw err;
   }
 };
