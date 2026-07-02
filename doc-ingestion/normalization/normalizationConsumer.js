@@ -1,5 +1,6 @@
 const amqp = require("amqplib");
 const { normalize } = require("./normalizer");
+const { setupQueues } = require("../queue/rabitMQ");
 
 const RABBITMQ_URL = process.env.RABBITMQ_URL || "amqp://localhost";
 const INPUT_QUEUE = "normalization_queue";
@@ -9,13 +10,13 @@ async function startNormalizationConsumer() {
   const connection = await amqp.connect(RABBITMQ_URL);
   const channel = await connection.createChannel();
 
-  await channel.assertQueue(INPUT_QUEUE, { durable: true });
-  await channel.assertQueue(OUTPUT_QUEUE, { durable: true });
+  await setupQueues(channel);
 
-  
   channel.prefetch(1);
 
-  console.log(`[Normalizer] Listening on "${INPUT_QUEUE}" → publishing to "${OUTPUT_QUEUE}"`);
+  console.log(
+    `[Normalizer] Listening on "${INPUT_QUEUE}" → publishing to "${OUTPUT_QUEUE}"`,
+  );
 
   channel.consume(INPUT_QUEUE, async (msg) => {
     if (!msg) return;
@@ -32,26 +33,25 @@ async function startNormalizationConsumer() {
 
     try {
       const normalized = normalize(raw);
-       console.log("[Normalized Output]:", JSON.stringify(normalized, null, 2));
-     
+      console.log("[Normalized Output]:", JSON.stringify(normalized, null, 2));
 
       channel.sendToQueue(
         OUTPUT_QUEUE,
         Buffer.from(JSON.stringify(normalized)),
-        { persistent: true }
+        { persistent: true },
       );
 
       console.log(
-      `[Normalizer]  ${normalized.source} | title="${normalized.title}" | doc_id=${normalized.doc_id}`
+        `[Normalizer]  ${normalized.source} | title="${normalized.title}" | doc_id=${normalized.doc_id}`,
       );
 
       channel.ack(msg);
     } catch (normErr) {
       console.error(
         `[Normalizer] ✗ Failed to normalize message from source="${raw?.source}":`,
-        normErr.message
+        normErr.message,
       );
-     
+
       channel.nack(msg, false, false);
     }
   });
