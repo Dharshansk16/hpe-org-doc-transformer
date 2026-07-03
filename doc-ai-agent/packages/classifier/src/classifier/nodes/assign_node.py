@@ -185,8 +185,8 @@ async def auto_assign(state: ClassifierState) -> ClassifierState:
                     "assign_node: DB write failed for group '%s': %s",
                     group_name, db_exc,
                 )
-                errors.append(f"assign_node DB write: {type(db_exc).__name__}: {db_exc}")
                 state["db_update_status"] = "error"
+                raise db_exc
         else:
             logger.warning(
                 "assign_node: missing group_id — skipping DB write for group '%s'",
@@ -202,6 +202,7 @@ async def auto_assign(state: ClassifierState) -> ClassifierState:
         state["readme_update_status"] = "error"
         decision_path.append("assign_node")
         state["decision_path"] = decision_path
+        raise exc
 
     finally:
         await github.aclose()

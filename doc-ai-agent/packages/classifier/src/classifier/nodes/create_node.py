@@ -86,7 +86,6 @@ def _generate_group_name(state: ClassifierState, llm) -> str:
     slugified = _slugify(raw_name)
     return slugified or _resolve_group_name(state)
 
-
 async def create_new_group(state: ClassifierState) -> ClassifierState:
     """
     LangGraph node — CREATE path.
@@ -213,8 +212,8 @@ async def create_new_group(state: ClassifierState) -> ClassifierState:
                 "create_node: DB write failed for group '%s': %s",
                 group_name, db_exc,
             )
-            errors.append(f"create_node DB write: {type(db_exc).__name__}: {db_exc}")
             state["db_update_status"] = "error"
+            raise db_exc
 
     except Exception as exc:
         error_msg = f"create_node: {type(exc).__name__}: {exc}"
@@ -224,6 +223,7 @@ async def create_new_group(state: ClassifierState) -> ClassifierState:
         state["readme_update_status"] = "error"
         decision_path.append("create_node")
         state["decision_path"] = decision_path
+        raise exc
 
     state["errors"] = errors if errors else None
     return state

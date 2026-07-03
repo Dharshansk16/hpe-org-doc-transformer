@@ -134,6 +134,7 @@ def aggregate_group_candidates(rows: list[dict], source: str = "unknown") -> lis
             "proto_count": g["proto_count"],
             "similarity": round(score, 6),
             "max_similarity": round(g["max_similarity"], 6),
+            "total_similarity": g["total_similarity"],
             "hit_count": g["hit_count"],
             "top_proto_index": g["top_proto_index"],
             "source": g["source"],
@@ -155,8 +156,8 @@ def merge_group_candidates(primary: list[dict], fallback: list[dict]) -> list[di
             #accumulate hits from both sources for a richer signal
             combined_hits = existing["hit_count"] + group["hit_count"]
             combined_total = (
-                existing.get("max_similarity", existing["similarity"]) * existing["hit_count"]
-                + group.get("max_similarity", group["similarity"]) * group["hit_count"]
+                existing.get("total_similarity", existing.get("max_similarity", existing["similarity"]) * existing["hit_count"])
+                + group.get("total_similarity", group.get("max_similarity", group["similarity"]) * group["hit_count"])
             )
             combined_max = max(
                 existing.get("max_similarity", existing["similarity"]),
@@ -169,6 +170,7 @@ def merge_group_candidates(primary: list[dict], fallback: list[dict]) -> list[di
                 **existing,
                 "similarity": round(combined_score, 6),
                 "max_similarity": round(combined_max, 6),
+                "total_similarity": combined_total,
                 "hit_count": combined_hits,
                 #keep the top_proto_index from whichever had the higher max
                 "top_proto_index": (

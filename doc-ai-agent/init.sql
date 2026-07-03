@@ -1,4 +1,7 @@
 --without this postgres wont know how to handle vector types
+
+--[TODO][Dharshan]:[Mid] optimising the schema by removing dual indexes on hnsw and fixing foreign key issues
+--[note]:latest schema update not yet migrated since not tested fully, currently db is running on the old schema
 CREATE EXTENSION IF NOT EXISTS vector;
 
 
@@ -82,13 +85,13 @@ CREATE INDEX IF NOT EXISTS idx_proto_embedding_hnsw
 --chunk search (fine-grained retrieval within a group)
 CREATE INDEX IF NOT EXISTS idx_chunks_embedding_hnsw
     ON document_chunks
-    USING hnsw (embedding vector_cosine_ops)
+    USING hnsw (embedding vector_cosine_ops);
     
 
 --doc segment search (used during prototype recompute)
 CREATE INDEX IF NOT EXISTS idx_segments_embedding_hnsw
     ON document_segments
-    USING hnsw (embedding vector_cosine_ops)
+    USING hnsw (embedding vector_cosine_ops);
   
 
 -- fast group filtering on chunks and segments
@@ -105,9 +108,6 @@ CREATE INDEX IF NOT EXISTS idx_documents_group_id
     ON documents (group_id);
 
 
-CREATE INDEX IF NOT EXISTS document_chunks_embedding_hnsw_idx
-    ON document_chunks
-    USING hnsw (embedding vector_cosine_ops);
 
 -- Create a publication for all tables that need to be replicated to the RAG VM
 CREATE PUBLICATION rag_publication FOR TABLE 
