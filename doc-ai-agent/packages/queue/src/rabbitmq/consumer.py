@@ -33,19 +33,20 @@ class RabbitMQConsumer:
         if not self.channel:
             raise RuntimeError("Not connected to RabbitMQ")
         
-        dlx_name = f"{self.queue_name}_dlx"
-        dlq_name = f"{self.queue_name}_dlq"
+        dlx_name = "dlx_exchange"
+        dlq_name = "dead_letter_queue"
+        routing_key = "failed_messages"
 
         dlx = await self.channel.declare_exchange(dlx_name, aio_pika.ExchangeType.DIRECT, durable=True)
         dlq = await self.channel.declare_queue(dlq_name, durable=True)
-        await dlq.bind(dlx, routing_key=self.queue_name)
+        await dlq.bind(dlx, routing_key=routing_key)
 
         queue = await self.channel.declare_queue(
             self.queue_name, 
             durable=True,
             arguments={
                 "x-dead-letter-exchange": dlx_name,
-                "x-dead-letter-routing-key": self.queue_name
+                "x-dead-letter-routing-key": routing_key
             }
         )
         logger.info(f"Declared queue: {self.queue_name} with DLQ: {dlq_name}")
