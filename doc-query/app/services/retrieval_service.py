@@ -175,22 +175,9 @@ def build_sources(chunks: list[dict]) -> dict:
     """
     Deduplicate chunks by doc_path and build the sources list
     for the LLM prompt's {context} and {sources} variables.
+    Fetches surrounding chunks from the database to provide better context.
     """
-    doc_path_to_chunks = {}
-    
-    #group by doc_path
-    for chunk in chunks:
-        doc_path = chunk["doc_path"]
-        if doc_path not in doc_path_to_chunks:
-            doc_path_to_chunks[doc_path] = []
-        doc_path_to_chunks[doc_path].append(chunk)
-        
-    context_blocks = []
-    citation_map = {}
-    source_index = 1
-    
-    # We want to iterate docs in order of their best chunk's rank
-    # So we sort doc_paths based on the position of their first chunk in `chunks`
+    #figure out doc_paths order based on original retrieved chunks
     doc_paths_ordered = []
     seen = set()
     for c in chunks:
@@ -198,16 +185,80 @@ def build_sources(chunks: list[dict]) -> dict:
             doc_paths_ordered.append(c["doc_path"])
             seen.add(c["doc_path"])
 
+    #fetch surrounding chunks from DB
+    doc_id_to_indices = {}
+    for chunk in chunks:
+        doc_id = chunk["doc_id"]
+        idx = chunk["chunk_index"]
+        if doc_id not in doc_id_to_indices:
+            doc_id_to_indices[doc_id] = set()
+        doc_id_to_indices[doc_id].update([max(0, idx - 1), idx, idx + 1])
+        
+    enriched_chunks = []
+    if doc_id_to_indices:
+        conditions = []
+        params = []
+        for doc_id, indices in doc_id_to_indices.items():
+            conditions.append("(dc.doc_id = %s AND dc.chunk_index = ANY(%s))")
+            params.extend([doc_id, list(indices)])
+            
+        sql = """
+            SELECT
+                dc.doc_id,
+                dc.chunk_index,
+                dc.chunk_text,
+                d.doc_path,
+                d.group_id
+            FROM document_chunks dc
+            JOIN documents d ON d.id = dc.doc_id
+            WHERE 
+        """ + " OR ".join(conditions)
+        
+        try:
+            from app.db.connection import get_connection
+            with get_connection() as conn:
+                with conn.cursor() as cur:
+                    cur.execute(sql, params)
+                    rows = cur.fetchall()
+                    enriched_chunks = [dict(row) for row in rows]
+        except Exception as e:
+            logger.error(f"Failed to fetch surrounding chunks: {e}")
+            enriched_chunks = chunks
+    else:
+        enriched_chunks = chunks
+
+    #group enriched chunks by doc_path
+    doc_path_to_enriched_chunks = {}
+    for chunk in enriched_chunks:
+        doc_path = chunk["doc_path"]
+        if doc_path not in doc_path_to_enriched_chunks:
+            doc_path_to_enriched_chunks[doc_path] = []
+        doc_path_to_enriched_chunks[doc_path].append(chunk)
+
+    #group original chunks by doc_path for scoring
+    doc_path_to_original_chunks = {}
+    for chunk in chunks:
+        doc_path = chunk["doc_path"]
+        if doc_path not in doc_path_to_original_chunks:
+            doc_path_to_original_chunks[doc_path] = []
+        doc_path_to_original_chunks[doc_path].append(chunk)
+        
+    context_blocks = []
+    citation_map = {}
+    source_index = 1
+    
     for doc_path in doc_paths_ordered:
         if source_index > 5:
             break
             
-        doc_chunks = doc_path_to_chunks[doc_path]
-        doc_chunks.sort(key=lambda x: x["chunk_index"])
-        merged_text = "\n\n".join(c["chunk_text"] for c in doc_chunks)
-        group_id = doc_chunks[0]["group_id"]
+        doc_enriched = doc_path_to_enriched_chunks.get(doc_path, [])
+        doc_enriched.sort(key=lambda x: x["chunk_index"])
         
-        best_sim = max((c.get("rerank_score", c.get("vector_similarity", 0.0)) for c in doc_chunks), default=0.0)
+        merged_text = "\n\n".join(c["chunk_text"] for c in doc_enriched)
+        group_id = doc_enriched[0]["group_id"] if doc_enriched else ""
+        
+        doc_original = doc_path_to_original_chunks.get(doc_path, [])
+        best_sim = max((c.get("rerank_score", c.get("vector_similarity", 0.0)) for c in doc_original), default=0.0)
         
         context_blocks.append({
             "source_index": source_index,
