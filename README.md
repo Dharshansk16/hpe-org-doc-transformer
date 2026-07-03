@@ -20,7 +20,7 @@
 - [Week 13 — Project: Implementation and Review](#week-13--transforming-organisational-docs-using-doc-ai-agent)
 - [Week 14 — Project: Implementation and Review](#week-14--transforming-organisational-docs-using-doc-ai-agent)
 - [Week 15 — Project: Implementation and Review](#week-15--transforming-organisational-docs-using-doc-ai-agent)
-- [Week 16-17 — Project: Implementation and Review](#week-16-17-transforming-organisational-docs-using-doc-ai-agent)
+- [Week 16-17 — Project: Implementation and Review](#week-16-17--transforming-organisational-docs-using-doc-ai-agent)
 
 
 ---
@@ -377,8 +377,16 @@ This week focused on establishing a robust and automated CI/CD pipeline using Gi
 
 ## Week 16-17 — Transforming Organisational Docs Using Doc AI Agent
 
-**`6/18/2026 – 7/2/2026`**
+**`6/18/2026 – 7/3/2026`**
 
-This week focused on enhancing the reliability and fault tolerance of the multi-source ingestion pipeline. Previously, transient API failures or unhandled exceptions within the ingestion and normalization consumers resulted in silent data loss. To resolve this, a robust Dead Letter Queue (DLQ) architecture was implemented, ensuring zero data loss and enabling the safe replay of messages during system recovery.
+This two weeks we focused on enhancing the fault tolerance of the multi-source ingestion pipeline and significantly improving the contextual accuracy of our LLM responses.
+
+Key Updates
+Eliminated Silent Data Loss: Integrated a robust Dead Letter Queue (DLQ) directly into the document ingestion pipeline. This resolves previous issues where transient API failures or unhandled exceptions within the ingestion and normalization consumers resulted in dropped data.
+
+Resolved Split-Brain Inconsistencies: Used the new DLQ alongside the implementation of idempotent retries(was already implemented via github sha). This combination successfully fixes split-brain state inconsistencies, if the db or github write fails mid it can be replayed from the
+message queue.
+
+Upgraded Retrieval Context Windowing: Enhanced the retrieval service to support context windowing. Instead of only feeding isolated exact-match chunks to the LLM, the service now provides the surrounding document chunks. Providing more accurate and complete context to the llm
 
 _Last updated: July 2026_
