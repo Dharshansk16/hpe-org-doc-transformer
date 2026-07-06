@@ -16,6 +16,7 @@ function ChatArea({ setSelectedDoc }) {
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [streaming, setStreaming] = useState(false);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -46,10 +47,10 @@ function ChatArea({ setSelectedDoc }) {
     
     setMessages((prev) => [
       ...prev, 
-      { role: "user", content: userQuery },
-      { role: "assistant", content: "", confidence: null, sources: [], query: userQuery, timestamp: new Date() }
+      { role: "user", content: userQuery }
     ]);
     setLoading(true);
+    setStreaming(true);
 
     let isFirstChunk = true;
 
@@ -70,20 +71,34 @@ function ChatArea({ setSelectedDoc }) {
               similarity: s.similarity ?? null,
             }));
             
-            setMessages((prev) => {
-              const newMsgs = [...prev];
-              const lastMsg = { ...newMsgs[newMsgs.length - 1] };
-              lastMsg.confidence = data.confidence_score ?? null;
-              lastMsg.sources = normalizedSources;
-              newMsgs[newMsgs.length - 1] = lastMsg;
-              return newMsgs;
-            });
+            setMessages((prev) => [
+              ...prev,
+              {
+                role: "assistant",
+                content: "",
+                confidence: data.confidence_score ?? null,
+                sources: normalizedSources,
+                query: userQuery,
+                timestamp: new Date()
+              }
+            ]);
           } else if (data.type === "chunk") {
             setMessages((prev) => {
               const newMsgs = [...prev];
-              const lastMsg = { ...newMsgs[newMsgs.length - 1] };
-              lastMsg.content += data.text;
-              newMsgs[newMsgs.length - 1] = lastMsg;
+              if (newMsgs.length === 0 || newMsgs[newMsgs.length - 1].role !== "assistant") {
+                newMsgs.push({
+                  role: "assistant",
+                  content: data.text,
+                  confidence: null,
+                  sources: [],
+                  query: userQuery,
+                  timestamp: new Date()
+                });
+              } else {
+                const lastMsg = { ...newMsgs[newMsgs.length - 1] };
+                lastMsg.content += data.text;
+                newMsgs[newMsgs.length - 1] = lastMsg;
+              }
               return newMsgs;
             });
           }
@@ -92,20 +107,34 @@ function ChatArea({ setSelectedDoc }) {
           console.error("Search stream failed:", error);
           setMessages((prev) => {
              const newMsgs = [...prev];
-             const lastMsg = { ...newMsgs[newMsgs.length - 1] };
-             if (!lastMsg.content) lastMsg.content = "Something went wrong. Please try again.";
-             newMsgs[newMsgs.length - 1] = lastMsg;
+             if (newMsgs.length > 0 && newMsgs[newMsgs.length - 1].role === "user") {
+               newMsgs.push({
+                 role: "assistant",
+                 content: "Something went wrong. Please try again.",
+                 confidence: null,
+                 sources: [],
+                 query: userQuery,
+                 timestamp: new Date()
+               });
+             } else if (newMsgs.length > 0) {
+               const lastMsg = { ...newMsgs[newMsgs.length - 1] };
+               if (!lastMsg.content) lastMsg.content = "Something went wrong. Please try again.";
+               newMsgs[newMsgs.length - 1] = lastMsg;
+             }
              return newMsgs;
           });
           setLoading(false);
+          setStreaming(false);
         },
         () => {
           setLoading(false);
+          setStreaming(false);
         }
       );
     } catch (err) {
       console.error("Search failed:", err);
       setLoading(false);
+      setStreaming(false);
     }
   }, [input, loading]);
 
@@ -154,7 +183,7 @@ function ChatArea({ setSelectedDoc }) {
           </div>
         )}
         {messages.map((msg, index) => (
-          <Message key={index} message={msg} onCiteClick={setSelectedDoc} />
+          <Message key={index} message={msg} onCiteClick={setSelectedDoc} isGenerating={streaming && index === messages.length - 1} />
         ))}
         {loading && (
           <div className="loading-skeleton" aria-label="Loading results">

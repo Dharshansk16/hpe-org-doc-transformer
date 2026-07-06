@@ -20,7 +20,7 @@ const confidenceLevel = (score) => {
   return "low";
 };
 
-function Message({ message, onCiteClick }) {
+function Message({ message, onCiteClick, isGenerating }) {
   const [showSources, setShowSources] = useState(false);
   const [copied, setCopied] = useState(false);
   const sources = message.sources || [];
@@ -153,7 +153,15 @@ function Message({ message, onCiteClick }) {
 
         {/* ── Report Body ── */}
         <div className="report-body">
-          <div className="markdown-body">{renderMarkdown(message.content)}</div>
+          {message.content ? (
+            <div className="markdown-body">{renderMarkdown(message.content)}</div>
+          ) : isGenerating ? (
+            <div className="markdown-body" style={{ display: 'flex', flexDirection: 'column', gap: '12px', padding: '4px 0' }}>
+              <div className="skeleton-line" style={{ width: '92%' }} />
+              <div className="skeleton-line" style={{ width: '78%' }} />
+              <div className="skeleton-line" style={{ width: '65%' }} />
+            </div>
+          ) : null}
         </div>
 
         {/* ── Report Footer ── */}
