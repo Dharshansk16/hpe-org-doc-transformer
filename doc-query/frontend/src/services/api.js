@@ -1,10 +1,9 @@
-import axios from "axios";
-
-const api = axios.create({
-  baseURL: "/api",
-});
-
-export const searchDocumentsStream = async (query, onMessage, onError, onComplete) => {
+export const searchDocumentsStream = async (
+  query,
+  onMessage,
+  onError,
+  onComplete,
+) => {
   try {
     const response = await fetch("/api/search", {
       method: "POST",
@@ -25,10 +24,10 @@ export const searchDocumentsStream = async (query, onMessage, onError, onComplet
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-      
+
       buffer += decoder.decode(value, { stream: true });
       const lines = buffer.split("\n\n");
-      
+
       // Keep the last partial chunk in the buffer
       buffer = lines.pop() || "";
 
