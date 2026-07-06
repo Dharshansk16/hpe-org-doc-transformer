@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import Message from "./Message";
-import { searchDocuments } from "../services/api";
+import { searchDocumentsStream } from "../services/api";
 
 const formatTitle = (doc_id) => {
   if (!doc_id) return "Untitled";
@@ -43,43 +43,68 @@ function ChatArea({ setSelectedDoc }) {
     if (!input.trim() || loading) return;
     const userQuery = input;
     setInput("");
-    setMessages((prev) => [...prev, { role: "user", content: userQuery }]);
+    
+    setMessages((prev) => [
+      ...prev, 
+      { role: "user", content: userQuery },
+      { role: "assistant", content: "", confidence: null, sources: [], query: userQuery, timestamp: new Date() }
+    ]);
     setLoading(true);
 
+    let isFirstChunk = true;
+
     try {
-      const data = await searchDocuments(userQuery);
-
-      const normalizedSources = (data.sources || []).map((s) => ({
-        title: s.title || formatTitle(s.doc_id),
-        path: s.doc_path || "",
-        content: s.chunk_text || "No content available.",
-        url: s.url || null,
-        similarity: s.similarity ?? null,
-      }));
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: data.answer || "No answer returned.",
-          confidence: data.confidence_score ?? null,
-          sources: normalizedSources,
-          query: userQuery,
-          timestamp: new Date(),
+      await searchDocumentsStream(
+        userQuery,
+        (data) => {
+          if (isFirstChunk) {
+            setLoading(false);
+            isFirstChunk = false;
+          }
+          if (data.type === "meta") {
+            const normalizedSources = (data.sources || []).map((s) => ({
+              title: s.title || formatTitle(s.doc_id),
+              path: s.doc_path || "",
+              content: s.chunk_text || "No content available.",
+              url: s.url || null,
+              similarity: s.similarity ?? null,
+            }));
+            
+            setMessages((prev) => {
+              const newMsgs = [...prev];
+              const lastMsg = { ...newMsgs[newMsgs.length - 1] };
+              lastMsg.confidence = data.confidence_score ?? null;
+              lastMsg.sources = normalizedSources;
+              newMsgs[newMsgs.length - 1] = lastMsg;
+              return newMsgs;
+            });
+          } else if (data.type === "chunk") {
+            setMessages((prev) => {
+              const newMsgs = [...prev];
+              const lastMsg = { ...newMsgs[newMsgs.length - 1] };
+              lastMsg.content += data.text;
+              newMsgs[newMsgs.length - 1] = lastMsg;
+              return newMsgs;
+            });
+          }
         },
-      ]);
+        (error) => {
+          console.error("Search stream failed:", error);
+          setMessages((prev) => {
+             const newMsgs = [...prev];
+             const lastMsg = { ...newMsgs[newMsgs.length - 1] };
+             if (!lastMsg.content) lastMsg.content = "Something went wrong. Please try again.";
+             newMsgs[newMsgs.length - 1] = lastMsg;
+             return newMsgs;
+          });
+          setLoading(false);
+        },
+        () => {
+          setLoading(false);
+        }
+      );
     } catch (err) {
       console.error("Search failed:", err);
-      setMessages((prev) => [
-        ...prev,
-        {
-          role: "assistant",
-          content: "Something went wrong. Please try again.",
-          sources: [],
-          timestamp: new Date(),
-        },
-      ]);
-    } finally {
       setLoading(false);
     }
   }, [input, loading]);

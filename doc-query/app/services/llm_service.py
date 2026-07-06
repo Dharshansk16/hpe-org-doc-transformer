@@ -1,5 +1,4 @@
 import os
-import requests
 from google import genai
 from langsmith import traceable
 
@@ -8,37 +7,14 @@ from .prompts import RAG_PROMPT_TEMPLATE
 client = genai.Client(api_key=os.getenv("GOOGLE_API_KEY"))
 gemini_model = os.getenv("GEMINI_MODEL", "gemini-3.1-flash-lite")
 
-@traceable
-def call_ollama(prompt: str):
-    try:
-        response = requests.post(
-            "http://localhost:11434/api/generate",
-            json={
-                "model": "llama3",
-                "prompt": prompt,
-                "stream": False
-            },
-            timeout=60
-        )
-        response.raise_for_status()
-        return response.json().get("response", "")
-    except requests.exceptions.HTTPError as e:
-        error_msg = e.response.text if e.response else str(e)
-        print(f"Ollama HTTP error: {error_msg}")
-        return "Sorry, unable to generate answer. Both Gemini and Ollama are unavailable."
-    except Exception as e:
-        print(f"Ollama fallback failed: {e}")
-        return "Sorry, unable to generate answer. Both Gemini and Ollama are unavailable."
 
 
 @traceable
-def generate_answer(query: str, retrieval_output: dict):
-    #build the context string
+def generate_answer_stream(query: str, retrieval_output: dict):
     context_str = "\n\n".join(
         f"[Source {b['source_index']}] {b['doc_path']}\n{b['text']}"
         for b in retrieval_output["context_blocks"]
     )
-
 
     sources_str = "\n".join(
         f"[{idx}] {path}"
@@ -54,17 +30,23 @@ def generate_answer(query: str, retrieval_output: dict):
     full_context = f"{retrieval_confidence_str}\n\n{context_str}\n\nSources:\n{sources_str}"
 
     prompt = RAG_PROMPT_TEMPLATE.format(query=query, context=full_context)
+    
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key or api_key.strip() == "":
+        yield retrieval_confidence_str + "\n\n"
+        yield "Sorry, Google API Key is not configured."
+        return
+
     try:
-        api_key = os.getenv("GOOGLE_API_KEY")
-        if not api_key or api_key.strip() == "":
-            print("Google API Key not found or empty, falling back to Ollama")
-            return f"{retrieval_confidence_str}\n\n{call_ollama(prompt)}"
-            
-        response = client.models.generate_content(
+        response = client.models.generate_content_stream(
             model=gemini_model,
             contents=prompt
         )
-        return f"{retrieval_confidence_str}\n\n{response.text}"
+        yield retrieval_confidence_str + "\n\n"
+        for chunk in response:
+            if chunk.text:
+                yield chunk.text
     except Exception as e:
-        print(f"Gemini generation failed: {e}. Falling back to Ollama.")
-        return f"{retrieval_confidence_str}\n\n{call_ollama(prompt)}"
+        print(f"Gemini generation failed: {e}")
+        yield retrieval_confidence_str + "\n\n"
+        yield f"Sorry, Gemini generation failed: {str(e)}"
