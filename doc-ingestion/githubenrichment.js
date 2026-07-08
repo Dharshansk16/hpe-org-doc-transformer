@@ -28,7 +28,7 @@ app.post("/enrich/github", async (req, res) => {
       }
     );
 
-    let readmeText = "";
+    let finalReadmes = [];
 
     try {
 
@@ -73,9 +73,10 @@ app.post("/enrich/github", async (req, res) => {
             "base64"
           ).toString("utf-8");
 
-          readmeContents.push(
-            `# FILE: ${file}\n${decoded}`
-          );
+          readmeContents.push({
+            file: file,
+            content: decoded
+          });
 
         } catch (err) {
 
@@ -86,7 +87,7 @@ app.post("/enrich/github", async (req, res) => {
         }
       }
 
-      readmeText = readmeContents.join("\n\n");
+      finalReadmes = readmeContents;
 
     } catch (err) {
 
@@ -98,7 +99,7 @@ app.post("/enrich/github", async (req, res) => {
 
     res.json({
       repoDetails: repoRes.data,
-      readme: readmeText,
+      readme: finalReadmes,
     });
 
   } catch (err) {

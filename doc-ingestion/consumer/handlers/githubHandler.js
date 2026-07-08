@@ -95,6 +95,10 @@ module.exports = async function (data, channel) {
 
           continue;
         }
+        
+        for (const f of files) {
+          changedReadmeFiles.push(f.filename);
+        }
 
         commitDetails.push({
 
@@ -175,27 +179,10 @@ module.exports = async function (data, channel) {
               continue;
          }
 
-         const oldContent = 
-         getReadmeContent(readmeKey);
-
-         const onlyNewContent = 
-         extractAddedContent(
-          oldContent,
-          latestContent
-         );
-
-         if(
-          !onlyNewContent.trim()
-         ){
-            
-          console.log(`No addec content in ${file}`);
-           continue;
-         }
-
          console.log(`New Content found in ${file}`);
 
          const parsed = extractReadmeData(
-          onlyNewContent
+          latestContent
          );
 
          changedReadmes.push({
@@ -203,7 +190,7 @@ module.exports = async function (data, channel) {
             file,
 
             changedContent:
-            onlyNewContent,
+            latestContent,
 
             parsed,
          });
