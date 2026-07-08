@@ -389,4 +389,11 @@ message queue.
 
 Upgraded Retrieval Context Windowing: Enhanced the retrieval service to support context windowing. Instead of only feeding isolated exact-match chunks to the LLM, the service now provides the surrounding document chunks. Providing more accurate and complete context to the llm
 
+## Week 18 — Transforming Organisational Docs Using Doc AI Agent
+
+**`7/3/2026 – 7/8/2026`**
+
+we refactored the Doc AI Agent's backend, replacing the direct LLM response model with a modern streamable HTTP response mechanism.
+By streaming output chunks as they are generated, we drastically reduced the Time to First Token (TTFT), effectively eliminating system bottlenecking and significantly improving the overall responsiveness of the application.
+
 _Last updated: July 2026_
