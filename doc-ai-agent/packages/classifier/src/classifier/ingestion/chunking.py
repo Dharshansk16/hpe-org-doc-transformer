@@ -18,6 +18,7 @@ def _make_splitter(chunk_size: int, overlap: int) -> RecursiveCharacterTextSplit
         keep_separator=True,
     )
 
+#[TODO:Dharshan][Chunking rules should support the rerank service model context window]
 _CHUNK_RULES: dict[str, tuple[int, int]] = {
     "prose":    (512, 64),
     "report":   (1024, 128),

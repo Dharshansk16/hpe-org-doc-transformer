@@ -3,7 +3,7 @@ from sentence_transformers import CrossEncoder
 
 logger = logging.getLogger(__name__)
 
-
+#TODO: [Dharshan] Change the model, this only supports context of 512 tokens, we have chunks of size 1024
 CROSS_ENCODER_MODEL_NAME = 'cross-encoder/ms-marco-MiniLM-L-6-v2'
 logger.info(f'Loading CrossEncoder model: {CROSS_ENCODER_MODEL_NAME}')
 cross_encoder = CrossEncoder(CROSS_ENCODER_MODEL_NAME)
@@ -23,7 +23,7 @@ def rerank_chunks(query: str, chunks: list[dict], top_k: int = 10) -> list[dict]
     scores = cross_encoder.predict(pairs)
     
     for chunk, score in zip(chunks, scores):
-        # Apply sigmoid to normalize logit to 0.0 - 1.0 probability
+        #apply sigmoid to normalize logit to 0.0 - 1.0 probability
         sigmoid_score = 1 / (1 + math.exp(-float(score)))
         chunk['cross_encoder_score'] = sigmoid_score
         
